@@ -307,19 +307,32 @@ namespace Simple.CredentialManager
         ///     Saves this instance.
         /// </summary>
         /// <returns><c>true</c> if credential is saved properly, <c>false</c> otherwise.</returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">password;The password has exceeded 2560 bytes.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException">description;The description has exceeded 256 characters.</exception>
         public bool Save()
         {
             CheckNotDisposed();
 
-            if (Password.Length * sizeof(char) > (512))
-            throw new ArgumentOutOfRangeException("password", "The password has exceeded 512 bytes.");
+            var blobsize = Password.Length * sizeof(char);
+
+            // CRED_MAX_CREDENTIAL_BLOB_SIZE for Windows 7 and later is 5*512 = 2560. Was 512 for XP and Vista, let's assume no one uses these anymore. 
+            if (blobsize > 2560)
+                throw new ArgumentOutOfRangeException("password", "The password has exceeded 2560 bytes.");
+
+
+            if ( Description != null)
+            {
+                // Comment cannot be longer than CRED_MAX_STRING_LENGTH (256) characters.
+                if (Description.Length > 255)
+                    throw new ArgumentOutOfRangeException("description", "The description has exceeded 256 characters.");
+            }
 
             var credential = new NativeMethods.CREDENTIAL
             {
                 TargetName = Target,
                 UserName = Username,
                 CredentialBlob = Marshal.StringToHGlobalUni(Password),
-                CredentialBlobSize = Password.Length * sizeof(char),
+                CredentialBlobSize = blobsize,
                 Comment = Description,
                 Type = (int) Type,
                 Persist = (int) PersistenceType
