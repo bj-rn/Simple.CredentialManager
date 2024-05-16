@@ -421,7 +421,7 @@ namespace Simple.CredentialManager
         {
 
             return NativeMethods.CredEnumerate()
-                .Select(c => new WinCredential(c.UserName, null, c.TargetName))
+                .Select(c => new WinCredential(c.UserName, null, c.TargetName, (CredentialType) c.Type))
                 .Where(c=>c.Load());
         }
 
