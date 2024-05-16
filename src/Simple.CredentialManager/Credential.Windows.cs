@@ -40,7 +40,7 @@ namespace Simple.CredentialManager
         /// <summary>
         ///     The password
         /// </summary>
-        private SecureString password;
+        private string password;
 
         /// <summary>
         ///     The persistence type
@@ -137,36 +137,15 @@ namespace Simple.CredentialManager
         /// <value>The decoded secure string password.</value>
         public string Password
         {
-            get { return SecureStringHelper.CreateString(SecurePassword); }
-            set
+            get 
             {
                 CheckNotDisposed();
-                SecurePassword =
-                    SecureStringHelper.CreateSecureString(string.IsNullOrEmpty(value) ? string.Empty : value);
+                return password; 
             }
-        }
-
-        /// <summary>
-        ///     Gets or sets the secure password.
-        /// </summary>
-        /// <value>The secure password of the account used to connect to TargetName.</value>
-        public SecureString SecurePassword
-        {
-            get
+           set
             {
                 CheckNotDisposed();
-
-                return null == password ? new SecureString() : password.Copy();
-            }
-            set
-            {
-                CheckNotDisposed();
-                if (null != password)
-                {
-                    password.Clear();
-                    password.Dispose();
-                }
-                password = null == value ? new SecureString() : value.Copy();
+                password = value;
             }
         }
 
@@ -301,14 +280,14 @@ namespace Simple.CredentialManager
         /// </param>
         private void Dispose(bool disposing)
         {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    SecurePassword.Clear();
-                    SecurePassword.Dispose();
-                }
-            }
+            //if (!disposed)
+            //{
+            //    if (disposing)
+            //    {
+                    
+            //    }
+            //}
+
             disposed = true;
         }
 
@@ -328,26 +307,26 @@ namespace Simple.CredentialManager
         ///     Saves this instance.
         /// </summary>
         /// <returns><c>true</c> if credential is saved properly, <c>false</c> otherwise.</returns>
-        /// <exception cref="System.ArgumentOutOfRangeException">password;The password has exceeded 512 bytes.</exception>
         public bool Save()
         {
             CheckNotDisposed();
 
-            if (SecurePassword.Length * sizeof(char) > (512))
+            if (Password.Length * sizeof(char) > (512))
             throw new ArgumentOutOfRangeException("password", "The password has exceeded 512 bytes.");
 
             var credential = new NativeMethods.CREDENTIAL
             {
                 TargetName = Target,
                 UserName = Username,
-                CredentialBlob = Marshal.SecureStringToGlobalAllocUnicode(SecurePassword),
-                CredentialBlobSize = SecurePassword.Length * sizeof(char),
+                CredentialBlob = Marshal.StringToHGlobalUni(Password),
+                CredentialBlobSize = Password.Length * sizeof(char),
                 Comment = Description,
                 Type = (int) Type,
                 Persist = (int) PersistenceType
             };
 
             var result = NativeMethods.CredWrite(ref credential, 0);
+
             if (!result)
                 return false;
 
@@ -437,7 +416,7 @@ namespace Simple.CredentialManager
             {
                 unsafe
                 {
-                    SecurePassword = new SecureString((char*)credential.CredentialBlob.ToPointer(), credential.CredentialBlobSize / sizeof(char));
+                    Password = Marshal.PtrToStringUni(credential.CredentialBlob, credential.CredentialBlobSize / sizeof(char));
                 }
             }
 
