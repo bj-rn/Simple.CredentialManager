@@ -22,17 +22,6 @@ namespace Simple.CredentialManager
 #endif
     public class WinCredential : ICredential
     {
-#if !NET8_0_OR_GREATER
-        /// <summary>
-        ///     The lock object
-        /// </summary>
-        private static readonly object LockObject = new object();
-
-        /// <summary>
-        ///     The unmanaged code permission
-        /// </summary>
-        private static readonly SecurityPermission UnmanagedCodePermission;
-#endif
         /// <summary>
         ///     The credential description
         /// </summary>
@@ -72,19 +61,6 @@ namespace Simple.CredentialManager
         ///     The username
         /// </summary>
         private string username;
-
-        /// <summary>
-        ///     Initializes UnmanagedCodePermission for the <see cref="WinCredential" /> class.
-        /// </summary>
-        static WinCredential()
-        {
-#if !NET8_0_OR_GREATER
-            lock (LockObject)
-            {
-                UnmanagedCodePermission = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
-            }
-#endif
-        }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="WinCredential" /> class.
@@ -179,9 +155,7 @@ namespace Simple.CredentialManager
             get
             {
                 CheckNotDisposed();
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
                 return null == password ? new SecureString() : password.Copy();
             }
             set
@@ -358,9 +332,7 @@ namespace Simple.CredentialManager
         public bool Save()
         {
             CheckNotDisposed();
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
             if (SecurePassword.Length * sizeof(char) > (512))
             throw new ArgumentOutOfRangeException("password", "The password has exceeded 512 bytes.");
 
@@ -391,9 +363,7 @@ namespace Simple.CredentialManager
         public bool Delete()
         {
             CheckNotDisposed();
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
             if (string.IsNullOrEmpty(Target))
                 throw new InvalidOperationException("Target must be specified to delete a credential.");
 
@@ -411,9 +381,7 @@ namespace Simple.CredentialManager
         public bool Load()
         {
             CheckNotDisposed();
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
             IntPtr credPointer;
 
             var result = NativeMethods.CredRead(Target, Type, 0, out credPointer);
@@ -436,9 +404,7 @@ namespace Simple.CredentialManager
         public bool Exists()
         {
             CheckNotDisposed();
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
             if (string.IsNullOrEmpty(Target))
             throw new InvalidOperationException("Target must be specified to check existance of a credential.");
 
@@ -453,9 +419,7 @@ namespace Simple.CredentialManager
         /// </summary>
         public static IEnumerable<WinCredential> LoadAll()
         {
-#if !NET8_0_OR_GREATER
-                UnmanagedCodePermission.Demand();
-#endif
+
             return NativeMethods.CredEnumerate()
                 .Select(c => new WinCredential(c.UserName, null, c.TargetName))
                 .Where(c=>c.Load());
