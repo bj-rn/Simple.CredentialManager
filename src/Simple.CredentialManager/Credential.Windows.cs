@@ -442,7 +442,7 @@ namespace Simple.CredentialManager
 
         public override string ToString()
         {
-            return string.Format($"Taget: {Target}, Username: {Username}, Password: {Password}, Type: {Type}, PersistenceType {PersistenceType}, Comment {Description}, LastWriteTime: {LastWriteTime}");
+            return $"Taget: {Target}, Username: {Username}, Password: {Password}, Type: {Type}, PersistenceType {PersistenceType}, Comment {Description}, LastWriteTime: {LastWriteTime}";
         }
     }
 }
